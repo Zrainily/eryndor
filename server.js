@@ -23,7 +23,7 @@ const CORS_ORIGIN  = process.env.CORS_ORIGIN || '*';
 // ── Middleware ────────────────────────────────────────────
 app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ── In-Memory Cache ───────────────────────────────────────
 // All data lives here; refreshed by cron jobs
