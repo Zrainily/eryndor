@@ -1,0 +1,18 @@
+# ─────────────────────────────────────────────
+# ERYNDOR Intelligence Platform — Environment
+# Copy this to .env and fill in your keys
+# ─────────────────────────────────────────────
+
+# Finnhub (you already have this)
+FINNHUB_KEY=d6pspm1r01qk0cf1q1c0d6pspm1r01qk0cf1q1cg
+
+# NewsData.io (you already have this)
+NEWSDATA_KEY=pub_194ef19773c8449580735adf9282ab70
+
+# Server config
+PORT=3001
+
+# CORS — set to your frontend URL in production
+# e.g. https://your-dashboard.vercel.app
+# Leave * for local dev
+CORS_ORIGIN=*

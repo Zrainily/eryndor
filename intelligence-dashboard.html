@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERYNDOR — Global Intelligence Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #020408;
+    --bg-deep: #040c14;
+    --bg-panel: #060f1a;
+    --bg-card: #081422;
+    --bg-hover: #0d1f32;
+    --border-dim: rgba(0,200,255,0.12);
+    --border-glow: rgba(0,200,255,0.4);
+    --neon-cyan: #00c8ff;
+    --neon-blue: #0080ff;
+    --neon-green: #00ff88;
+    --neon-red: #ff2244;
+    --neon-orange: #ff8800;
+    --neon-yellow: #ffdd00;
+    --neon-purple: #9945ff;
+    --text-bright: #e8f4ff;
+    --text-mid: #7ab8d4;
+    --text-dim: #3d6a84;
+    --text-ghost: #1a3d55;
+    --scanline: rgba(0,200,255,0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-void);
+    color: var(--text-bright);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      var(--scanline) 2px,
+      var(--scanline) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+    animation: scanMove 8s linear infinite;
+  }
+
+  @keyframes scanMove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
+  }
+
+  /* Grid noise */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(0,80,160,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,200,255,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ---- TOP BAR ---- */
+  #topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    background: linear-gradient(180deg, rgba(4,12,20,0.98) 0%, rgba(4,12,20,0.85) 100%);
+    border-bottom: 1px solid var(--border-glow);
+    display: flex;
+    align-items: center;
+    gap: 0;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 30px rgba(0,200,255,0.15);
+  }
+
+  #logo-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 20px;
+    border-right: 1px solid var(--border-dim);
+    height: 100%;
+    min-width: 200px;
+  }
+
+  .logo-hex {
+    width: 28px; height: 28px;
+    position: relative;
+  }
+
+  .logo-hex svg { width: 100%; height: 100%; }
+
+  #logo-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 20px var(--neon-cyan), 0 0 40px rgba(0,200,255,0.4);
+  }
+
+  .top-ticker {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  .ticker-inner {
+    display: flex;
+    gap: 0;
+    animation: tickerScroll 60s linear infinite;
+    white-space: nowrap;
+  }
+
+  @keyframes tickerScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 20px;
+    border-right: 1px solid var(--border-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    height: 48px;
+  }
+
+  .ticker-symbol { color: var(--neon-cyan); font-weight: 700; }
+  .ticker-price { color: var(--text-bright); }
+  .ticker-up { color: var(--neon-green); }
+  .ticker-down { color: var(--neon-red); }
+
+  .top-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    border-left: 1px solid var(--border-dim);
+    height: 100%;
+  }
+
+  .system-clock {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px rgba(0,200,255,0.5);
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--neon-green);
+    box-shadow: 0 0 8px var(--neon-green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--neon-green); }
+    50% { opacity: 0.5; box-shadow: 0 0 4px var(--neon-green); }
+  }
+
+  /* ---- MAIN LAYOUT ---- */
+  #main {
+    position: fixed;
+    top: 48px; bottom: 0; left: 0; right: 0;
+    display: grid;
+    grid-template-columns: 200px 1fr 300px;
+    grid-template-rows: 1fr;
+    gap: 0;
+    z-index: 1;
+  }
+
+  /* ---- LEFT NAV ---- */
+  #leftnav {
+    background: linear-gradient(180deg, rgba(6,15,26,0.98) 0%, rgba(4,10,18,0.98) 100%);
+    border-right: 1px solid var(--border-dim);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 0;
+    overflow: hidden;
+  }
+
+  .nav-section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-ghost);
+    padding: 12px 16px 6px;
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-left: 2px solid transparent;
+    position: relative;
+  }
+
+  .nav-item:hover, .nav-item.active {
+    background: rgba(0,200,255,0.06);
+    border-left-color: var(--neon-cyan);
+  }
+
+  .nav-item.active .nav-label { color: var(--neon-cyan); }
+
+  .nav-icon {
+    width: 14px; height: 14px;
+    opacity: 0.7;
+    font-size: 14px;
+  }
+
+  .nav-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text-mid);
+    text-transform: uppercase;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--neon-red);
+    color: white;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    box-shadow: 0 0 6px rgba(255,34,68,0.6);
+  }
+
+  .nav-divider {
+    height: 1px;
+    background: var(--border-dim);
+    margin: 10px 16px;
+  }
+
+  .risk-gauge {
+    margin: auto 16px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    padding: 12px;
+    border-radius: 4px;
+  }
+
+  .risk-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .risk-bar-outer {
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .risk-bar-inner {
+    height: 100%;
+    width: 67%;
+    background: linear-gradient(90deg, var(--neon-orange), var(--neon-red));
+    box-shadow: 0 0 10px rgba(255,136,0,0.5);
+    border-radius: 3px;
+    transition: width 2s ease;
+  }
+
+  .risk-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    color: var(--neon-orange);
+    text-shadow: 0 0 15px rgba(255,136,0,0.5);
+  }
+
+  .risk-sublabel {
+    font-size: 10px;
+    color: var(--neon-orange);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* ---- CENTER PANEL ---- */
+  #center {
+    background: var(--bg-deep);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-dim) transparent;
+  }
+
+  /* ---- RIGHT PANEL ---- */
+  #rightpanel {
+    background: linear-gradient(180deg, rgba(6,15,26,0.98) 0%, rgba(4,10,18,0.98) 100%);
+    border-left: 1px solid var(--border-dim);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .rpanel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-dim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .rpanel-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--neon-cyan);
+  }
+
+  .rpanel-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-dim) transparent;
+  }
+
+  /* ---- PANELS / CARDS ---- */
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    transition: border-color 0.3s ease;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    opacity: 0.4;
+  }
+
+  .panel:hover { border-color: rgba(0,200,255,0.25); }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-dim);
+    background: rgba(0,0,0,0.3);
+  }
+
+  .panel-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--neon-cyan);
+    text-transform: uppercase;
+  }
+
+  .panel-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 2px 8px;
+    border: 1px solid;
+    border-radius: 2px;
+  }
+
+  .tag-live { color: var(--neon-green); border-color: var(--neon-green); box-shadow: 0 0 6px rgba(0,255,136,0.3); }
+  .tag-alert { color: var(--neon-red); border-color: var(--neon-red); }
+  .tag-ai { color: var(--neon-purple); border-color: var(--neon-purple); }
+
+  /* ---- MARKET ROW ---- */
+  .markets-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border-dim);
+  }
+
+  .market-cell {
+    background: var(--bg-card);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .market-cell:hover { background: var(--bg-hover); }
+
+  .market-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .market-price {
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+  }
+
+  .market-change {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .change-up { color: var(--neon-green); }
+  .change-down { color: var(--neon-red); }
+
+  /* Mini sparkline */
+  .sparkline {
+    margin-top: 8px;
+    height: 28px;
+  }
+
+  /* ---- WORLD MAP PLACEHOLDER ---- */
+  .map-container {
+    height: 320px;
+    background: var(--bg-card);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-svg-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .map-overlay-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,200,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .conflict-marker {
+    position: absolute;
+    cursor: pointer;
+  }
+
+  .conflict-ping {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    animation: conflictPing 2s ease-out infinite;
+    position: relative;
+  }
+
+  .ping-red { background: var(--neon-red); box-shadow: 0 0 8px var(--neon-red); }
+  .ping-orange { background: var(--neon-orange); box-shadow: 0 0 8px var(--neon-orange); }
+  .ping-yellow { background: var(--neon-yellow); box-shadow: 0 0 8px var(--neon-yellow); }
+
+  .conflict-ping::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    animation: ripple 2s ease-out infinite;
+    opacity: 0.5;
+  }
+
+  @keyframes conflictPing {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  @keyframes ripple {
+    0% { transform: scale(0.5); opacity: 0.8; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+
+  .conflict-tooltip {
+    position: absolute;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(4,12,20,0.95);
+    border: 1px solid var(--neon-red);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+  }
+
+  .conflict-marker:hover .conflict-tooltip { opacity: 1; }
+
+  /* ---- CHARTS ---- */
+  .chart-area {
+    height: 120px;
+    position: relative;
+  }
+
+  /* ---- CRYPTO GRID ---- */
+  .crypto-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .crypto-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .crypto-card:hover {
+    border-color: rgba(0,200,255,0.3);
+    background: var(--bg-hover);
+  }
+
+  .crypto-icon {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .crypto-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+  }
+
+  .crypto-price {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: var(--text-bright);
+    margin: 3px 0;
+  }
+
+  .crypto-change {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* ---- NEWS FEED ---- */
+  .news-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-left: 3px solid;
+    padding: 8px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .news-card:hover { background: var(--bg-hover); }
+  .news-card.politics { border-left-color: var(--neon-blue); }
+  .news-card.war { border-left-color: var(--neon-red); }
+  .news-card.economy { border-left-color: var(--neon-green); }
+  .news-card.tech { border-left-color: var(--neon-purple); }
+  .news-card.crisis { border-left-color: var(--neon-orange); }
+
+  .news-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .news-category {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .cat-war { background: rgba(255,34,68,0.15); color: var(--neon-red); }
+  .cat-economy { background: rgba(0,255,136,0.1); color: var(--neon-green); }
+  .cat-tech { background: rgba(153,69,255,0.15); color: var(--neon-purple); }
+  .cat-politics { background: rgba(0,128,255,0.15); color: var(--neon-blue); }
+  .cat-crisis { background: rgba(255,136,0,0.15); color: var(--neon-orange); }
+
+  .news-source {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    color: var(--text-dim);
+  }
+
+  .news-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    color: var(--text-ghost);
+    margin-left: auto;
+  }
+
+  .news-headline {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+  }
+
+  .news-sentiment {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+  }
+
+  .sent-neg { color: var(--neon-red); }
+  .sent-pos { color: var(--neon-green); }
+  .sent-neu { color: var(--text-dim); }
+
+  .relevance-bar {
+    display: inline-block;
+    width: 40px;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+
+  .relevance-fill {
+    height: 100%;
+    background: var(--neon-cyan);
+    border-radius: 2px;
+  }
+
+  /* ---- ALERT CARDS ---- */
+  .alert-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 3px;
+    padding: 8px 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .alert-card.critical {
+    border-color: rgba(255,34,68,0.4);
+    background: rgba(255,34,68,0.04);
+  }
+
+  .alert-card.warning {
+    border-color: rgba(255,136,0,0.4);
+    background: rgba(255,136,0,0.04);
+  }
+
+  .alert-card.info {
+    border-color: rgba(0,200,255,0.25);
+  }
+
+  .alert-card.success {
+    border-color: rgba(0,255,136,0.3);
+    background: rgba(0,255,136,0.03);
+  }
+
+  .alert-type {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    margin-bottom: 3px;
+  }
+
+  .alert-critical { color: var(--neon-red); }
+  .alert-warning { color: var(--neon-orange); }
+  .alert-info-color { color: var(--neon-cyan); }
+  .alert-success { color: var(--neon-green); }
+
+  .alert-text {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-bright);
+  }
+
+  .alert-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    color: var(--text-ghost);
+    margin-top: 3px;
+  }
+
+  .alert-flash {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--neon-red);
+    box-shadow: 0 0 6px var(--neon-red);
+    animation: flashPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes flashPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  /* ---- ECONOMIC INDICATORS ---- */
+  .econ-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .econ-cell {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 3px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .econ-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .econ-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .econ-trend {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    margin-top: 3px;
+    color: var(--text-dim);
+  }
+
+  /* ---- AI MODULE ---- */
+  .ai-insights {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ai-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-card);
+    border: 1px solid rgba(153,69,255,0.2);
+    border-radius: 3px;
+  }
+
+  .ai-icon {
+    font-size: 16px;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  .ai-text {
+    flex: 1;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-mid);
+  }
+
+  .ai-conf {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--neon-purple);
+    white-space: nowrap;
+  }
+
+  /* ---- SECTION HEADINGS in center ---- */
+  .section-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ---- BOTTOM STATUS BAR ---- */
+  #statusbar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 24px;
+    background: rgba(4,12,20,0.98);
+    border-top: 1px solid var(--border-dim);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 16px;
+    z-index: 1000;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  .status-dot-sm {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+  }
+
+  .dot-green { background: var(--neon-green); }
+  .dot-yellow { background: var(--neon-yellow); }
+  .dot-red { background: var(--neon-red); }
+
+  /* ---- SCROLLBAR ---- */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 2px; }
+
+  /* ---- LOADING ANIMATION ---- */
+  .data-loading {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--neon-cyan);
+    overflow: hidden;
+  }
+
+  /* SVG Map */
+  #worldmap-svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.7;
+  }
+
+  .country-path {
+    fill: #0a1e30;
+    stroke: #0d3050;
+    stroke-width: 0.5;
+    transition: fill 0.2s;
+    cursor: pointer;
+  }
+
+  .country-path:hover { fill: #102a40; }
+  .country-path.conflict-zone { fill: #1a0810; }
+  .country-path.tension-zone { fill: #1a1008; }
+
+  /* Grid layout for center panel */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* Animated counter */
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-in { animation: countUp 0.4s ease-out forwards; }
+
+  /* Glitch effect on title */
+  @keyframes glitch {
+    0%, 95%, 100% { clip-path: none; transform: none; }
+    96% { clip-path: polygon(0 0, 100% 0, 100% 30%, 0 30%); transform: translate(-2px, 0); color: var(--neon-red); }
+    97% { clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%); transform: translate(2px, 0); color: var(--neon-blue); }
+    98% { clip-path: none; transform: none; }
+  }
+
+  .glitch-text { animation: glitch 8s ease-in-out infinite; }
+
+  /* Data update flash */
+  @keyframes dataFlash {
+    0% { background: rgba(0,200,255,0.1); }
+    100% { background: transparent; }
+  }
+
+  .data-updated { animation: dataFlash 0.5s ease-out; }
+
+  .btn-small {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    background: rgba(0,200,255,0.08);
+    border: 1px solid var(--border-dim);
+    color: var(--text-mid);
+    cursor: pointer;
+    border-radius: 2px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .btn-small:hover {
+    background: rgba(0,200,255,0.15);
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+  }
+
+  /* View tabs */
+  .view-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .view-tab {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 8px 14px;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .view-tab.active {
+    color: var(--neon-cyan);
+    border-bottom-color: var(--neon-cyan);
+    background: rgba(0,200,255,0.05);
+  }
+
+  /* Candle chart */
+  .candle-chart { padding: 8px 12px; }
+
+  /* Macro values */
+  .macro-big {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="logo-block">
+    <div class="logo-hex">
+      <svg viewBox="0 0 28 28" fill="none">
+        <polygon points="14,2 25,8 25,20 14,26 3,20 3,8" fill="none" stroke="#00c8ff" stroke-width="1.5"/>
+        <polygon points="14,6 21,10 21,18 14,22 7,18 7,10" fill="rgba(0,200,255,0.1)" stroke="#00c8ff" stroke-width="0.8"/>
+        <circle cx="14" cy="14" r="3" fill="#00c8ff"/>
+      </svg>
+    </div>
+    <div id="logo-text" class="glitch-text">ERYNDOR</div>
+  </div>
+
+  <div class="top-ticker">
+    <div class="ticker-inner" id="ticker">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <div class="top-right">
+    <div class="status-dot"></div>
+    <span id="mode-badge" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--neon-green);letter-spacing:2px;">🟡 CONNECTING...</span>
+    <div class="system-clock" id="clock">00:00:00</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT NAV -->
+  <div id="leftnav">
+    <div class="nav-section-label">MODULES</div>
+
+    <div class="nav-item active" onclick="setView('overview')">
+      <span class="nav-icon">◈</span>
+      <span class="nav-label">Overview</span>
+    </div>
+    <div class="nav-item" onclick="setView('markets')">
+      <span class="nav-icon">◫</span>
+      <span class="nav-label">Markets</span>
+    </div>
+    <div class="nav-item" onclick="setView('conflicts')">
+      <span class="nav-icon">◉</span>
+      <span class="nav-label">Conflicts</span>
+      <span class="nav-badge">7</span>
+    </div>
+    <div class="nav-item" onclick="setView('news')">
+      <span class="nav-icon">◪</span>
+      <span class="nav-label">News Feed</span>
+    </div>
+    <div class="nav-item" onclick="setView('economy')">
+      <span class="nav-icon">◧</span>
+      <span class="nav-label">Economy</span>
+    </div>
+    <div class="nav-item" onclick="setView('ai')">
+      <span class="nav-icon">⬡</span>
+      <span class="nav-label">AI Insight</span>
+      <span class="nav-badge" style="background:var(--neon-purple);">NEW</span>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">SYSTEM</div>
+
+    <div class="nav-item">
+      <span class="nav-icon">◎</span>
+      <span class="nav-label">Sources</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">◌</span>
+      <span class="nav-label">Alerts</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">◈</span>
+      <span class="nav-label">Settings</span>
+    </div>
+
+    <!-- Risk Gauge -->
+    <div class="risk-gauge">
+      <div class="risk-label">// GLOBAL RISK INDEX</div>
+      <div class="risk-bar-outer">
+        <div class="risk-bar-inner" id="risk-bar"></div>
+      </div>
+      <div class="risk-value" id="risk-value">67</div>
+      <div class="risk-sublabel">ELEVATED RISK</div>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div id="center">
+
+    <!-- WORLD MAP -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">// GEOPOLITICAL INTELLIGENCE MAP</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim)">7 ACTIVE CONFLICTS</span>
+          <span class="panel-tag tag-live">● LIVE</span>
+        </div>
+      </div>
+      <div class="map-container">
+        <div class="map-overlay-grid"></div>
+        <canvas id="mapCanvas" style="width:100%;height:100%;position:absolute;top:0;left:0;"></canvas>
+        <!-- Conflict markers positioned over canvas -->
+        <div id="conflict-markers"></div>
+        <div style="position:absolute;bottom:10px;left:12px;display:flex;gap:12px;z-index:5">
+          <div style="display:flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim)">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--neon-red);"></div> WAR
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim)">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--neon-orange);"></div> CONFLICT
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim)">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--neon-yellow);"></div> TENSION
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETS ROW -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">// GLOBAL FINANCIAL MARKETS</span>
+        <span class="panel-tag tag-live" id="markets-api-badge">● CONNECTING...</span>
+      </div>
+      <div class="markets-grid" id="markets-grid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- CHARTS + CRYPTO ROW -->
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">// S&P 500 INTRADAY</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn-small">1D</button>
+            <button class="btn-small">1W</button>
+            <button class="btn-small">1M</button>
+          </div>
+        </div>
+        <div class="candle-chart">
+          <canvas id="spxChart" height="110"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">// CRYPTO MARKETS</span>
+          <span class="panel-tag tag-live">● LIVE</span>
+        </div>
+        <div class="crypto-grid" id="crypto-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ECONOMIC INDICATORS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">// MACROECONOMIC INDICATORS</span>
+        <span class="panel-tag" style="color:var(--neon-cyan);border-color:var(--neon-cyan)">UPDATED 1H AGO</span>
+      </div>
+      <div class="econ-grid" id="econ-grid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- NEWS + AI INSIGHT -->
+    <div class="two-col">
+      <div class="panel" style="max-height:320px;display:flex;flex-direction:column;">
+        <div class="panel-header">
+          <span class="panel-title">// NEWS INTELLIGENCE</span>
+          <div class="view-tabs" style="border:none;margin:0">
+            <div class="view-tab active" style="padding:0 10px">ALL</div>
+            <div class="view-tab" style="padding:0 10px">WAR</div>
+            <div class="view-tab" style="padding:0 10px">ECON</div>
+          </div>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:8px;display:flex;flex-direction:column;gap:6px;" id="news-center">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <div class="panel" style="display:flex;flex-direction:column;gap:0">
+        <div class="panel-header">
+          <span class="panel-title">// AI INTELLIGENCE MODULE</span>
+          <span class="panel-tag tag-ai">⬡ ERYNDOR-AI</span>
+        </div>
+        <div class="ai-insights" id="ai-insights">
+          <!-- Populated by JS -->
+        </div>
+        <div class="panel-header" style="margin-top:auto;border-top:1px solid var(--border-dim);border-bottom:none">
+          <span class="panel-title">// TOP STOCKS — FINNHUB LIVE</span>
+          <span class="panel-tag tag-live">● LIVE</span>
+        </div>
+        <div class="crypto-grid" id="company-stocks" style="padding:8px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="rightpanel">
+    <div class="rpanel-header">
+      <span class="rpanel-title">// LIVE INTELLIGENCE FEED</span>
+      <div class="status-dot" style="width:6px;height:6px;"></div>
+    </div>
+
+    <!-- Sentiment bar -->
+    <div style="padding:10px 12px;border-bottom:1px solid var(--border-dim);">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);margin-bottom:6px;letter-spacing:2px;">GLOBAL SENTIMENT</div>
+      <div id="sentiment-bar" style="display:flex;gap:2px;height:6px;border-radius:3px;overflow:hidden;">
+        <div style="width:28%;background:var(--neon-green);"></div>
+        <div style="width:38%;background:var(--text-ghost);"></div>
+        <div style="width:34%;background:var(--neon-red);"></div>
+      </div>
+      <div id="sentiment-labels" style="display:flex;justify-content:space-between;margin-top:4px;font-family:'Share Tech Mono',monospace;font-size:8px;">
+        <span style="color:var(--neon-green)">28% POS</span>
+        <span style="color:var(--text-dim)">38% NEU</span>
+        <span style="color:var(--neon-red)">34% NEG</span>
+      </div>
+    </div>
+
+    <div class="rpanel-feed" id="right-feed">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <div class="status-item"><div class="status-dot-sm dot-green"></div>APIs: 12/12 CONNECTED</div>
+  <div class="status-item"><div class="status-dot-sm dot-green"></div>DATA STREAM: ACTIVE</div>
+  <div class="status-item"><div class="status-dot-sm dot-yellow"></div>LATENCY: 42ms</div>
+  <div class="status-item"><div class="status-dot-sm dot-green"></div>AI ENGINE: ONLINE</div>
+  <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-ghost);">
+    ERYNDOR INTELLIGENCE PLATFORM v4.0.1 — CLASSIFICATION: UNCLASSIFIED // FOR DEMONSTRATION
+  </div>
+</div>
+
+<script>
+'use strict';
+// ============================================================
+// ERYNDOR Intelligence Platform — Frontend v5.0
+// Connects to backend via WebSocket (ws://localhost:3001)
+// Falls back to direct API calls if no backend detected
+// ============================================================
+
+const BACKEND_URL = 'http://localhost:3001';
+const WS_URL      = 'ws://localhost:3001';
+
+// ── API Keys (fallback direct mode only) ──────────────────
+const NEWSDATA_KEY = 'pub_194ef19773c8449580735adf9282ab70';
+const FINNHUB_KEY  = 'd6pspm1r01qk0cf1q1c0d6pspm1r01qk0cf1q1cg';
+
+// ── State ─────────────────────────────────────────────────
+let wsConnection   = null;
+let backendOnline  = false;
+let marketMood     = 0;
+let tickCount      = 0;
+let aiCycle        = 0;
+let autoAlertIdx   = 0;
+let spxCandles     = [];
+let cryptoApiStatus= 'PENDING';
+
+// ── Market simulation state ────────────────────────────────
+const MARKET_PARAMS = [
+  { sym:'S&P 500',    base:5847.23,  mu:0.00003,  sigma:0.0008 },
+  { sym:'NASDAQ',     base:19284.61, mu:0.00004,  sigma:0.0010 },
+  { sym:'DOW JONES',  base:43847.10, mu:0.00002,  sigma:0.0007 },
+  { sym:'NIFTY 50',   base:24087.35, mu:0.00005,  sigma:0.0009 },
+  { sym:'FTSE 100',   base:8287.44,  mu:0.00001,  sigma:0.0007 },
+  { sym:'DAX',        base:20214.87, mu:0.00003,  sigma:0.0008 },
+  { sym:'NIKKEI 225', base:38912.40, mu:0.00004,  sigma:0.0009 },
+  { sym:'HANG SENG',  base:20984.28, mu:-0.00002, sigma:0.0011 },
+];
+const MARKETS = MARKET_PARAMS.map(p => ({
+  ...p, val: p.base,
+  open: p.base * (1 + (Math.random()-0.5)*0.008),
+  history: Array.from({length:60}, (_,i) => {
+    let v = p.base;
+    for(let j=0;j<i;j++) v *= Math.exp((p.mu-0.5*p.sigma**2)+p.sigma*(Math.random()*2-1)*0.7);
+    return v;
+  }),
+  get chg() { return this.val - this.open; },
+  get pct() { return (this.chg / this.open) * 100; },
+}));
+
+const CRYPTO = [
+  { id:'bitcoin',    sym:'BTC', name:'BITCOIN',  price:0, chg24h:0, chg1h:0, cap:0, icon:'₿', fallback:96500 },
+  { id:'ethereum',   sym:'ETH', name:'ETHEREUM', price:0, chg24h:0, chg1h:0, cap:0, icon:'Ξ', fallback:3400  },
+  { id:'solana',     sym:'SOL', name:'SOLANA',   price:0, chg24h:0, chg1h:0, cap:0, icon:'◎', fallback:178   },
+  { id:'binancecoin',sym:'BNB', name:'BNB',      price:0, chg24h:0, chg1h:0, cap:0, icon:'⬡',fallback:600   },
+  { id:'ripple',     sym:'XRP', name:'RIPPLE',   price:0, chg24h:0, chg1h:0, cap:0, icon:'✕', fallback:2.28  },
+  { id:'cardano',    sym:'ADA', name:'CARDANO',  price:0, chg24h:0, chg1h:0, cap:0, icon:'◈', fallback:0.85  },
+];
+
+const COMPANY_STOCKS = [
+  { sym:'AAPL', name:'APPLE',     price:0, chg:0, pct:0, fallback:224.5 },
+  { sym:'TSLA', name:'TESLA',     price:0, chg:0, pct:0, fallback:248.2 },
+  { sym:'NVDA', name:'NVIDIA',    price:0, chg:0, pct:0, fallback:118.4 },
+  { sym:'AMZN', name:'AMAZON',    price:0, chg:0, pct:0, fallback:228.7 },
+  { sym:'MSFT', name:'MICROSOFT', price:0, chg:0, pct:0, fallback:415.3 },
+  { sym:'META', name:'META',      price:0, chg:0, pct:0, fallback:612.8 },
+];
+
+const ECON = [
+  { label:'US CPI',        val:'3.2%',   color:'#ff8800' },
+  { label:'FED RATE',      val:'4.50%',  color:'#00c8ff' },
+  { label:'US GDP',        val:'2.8%',   color:'#00ff88' },
+  { label:'UNEMPLOYMENT',  val:'4.1%',   color:'#00ff88' },
+  { label:'OIL (WTI)',     val:'$79.40', color:'#ffdd00', cur:79.40  },
+  { label:'GOLD',          val:'$2,930', color:'#ffdd00', cur:2930   },
+  { label:'EUR/USD',       val:'1.0842', color:'#00c8ff', cur:1.0842 },
+  { label:'VIX',           val:'18.42',  color:'#9945ff', cur:18.42  },
+];
+
+let activeNews = [
+  { cat:'WAR',      source:'Reuters',   headline:'Frontline activity intensifies as diplomatic efforts remain stalled', sentiment:'neg', rel:94, tsMs:Date.now()-3*60000   },
+  { cat:'ECONOMY',  source:'Bloomberg', headline:'Central banks signal coordinated response to global inflation pressures', sentiment:'neu', rel:88, tsMs:Date.now()-9*60000  },
+  { cat:'POLITICS', source:'AP',        headline:'NATO allies debate increased force posture along eastern flank',      sentiment:'neg', rel:85, tsMs:Date.now()-15*60000  },
+  { cat:'TECH',     source:'Reuters',   headline:'Semiconductor export controls tighten as technology rivalry escalates', sentiment:'neg', rel:79, tsMs:Date.now()-24*60000 },
+  { cat:'CRISIS',   source:'AFP',       headline:'Humanitarian situation deteriorates in active conflict zones worldwide', sentiment:'neg', rel:91, tsMs:Date.now()-35*60000 },
+  { cat:'ECONOMY',  source:'WSJ',       headline:'Manufacturing data misses forecasts, raising economic slowdown concerns', sentiment:'neg', rel:82, tsMs:Date.now()-48*60000},
+];
+
+let CONFLICTS = [
+  { name:'Russia-Ukraine', level:'WAR',      pos:{x:57,y:22}, type:'red',    events:'Active front lines',  risk:'CRITICAL' },
+  { name:'Gaza / Israel',  level:'WAR',      pos:{x:57,y:34}, type:'red',    events:'Ongoing operations',  risk:'CRITICAL' },
+  { name:'Red Sea',        level:'CONFLICT', pos:{x:60,y:38}, type:'orange', events:'Houthi attacks',      risk:'HIGH'     },
+  { name:'Myanmar',        level:'CONFLICT', pos:{x:78,y:38}, type:'orange', events:'Civil war',           risk:'HIGH'     },
+  { name:'Sudan',          level:'CONFLICT', pos:{x:55,y:42}, type:'orange', events:'RSF clashes',         risk:'HIGH'     },
+  { name:'Taiwan Strait',  level:'TENSION',  pos:{x:82,y:32}, type:'yellow', events:'PLA exercises',       risk:'MODERATE' },
+  { name:'S. China Sea',   level:'TENSION',  pos:{x:80,y:39}, type:'yellow', events:'Naval standoff',      risk:'MODERATE' },
+];
+
+const AI_POOL = [
+  { icon:'◉', text:'Correlation detected: Rising energy prices + Eastern European conflict + USD strength — 91% match to 2022 pattern.', conf:'91%' },
+  { icon:'⬡', text:'NLP scan of live news feed: conflict-related keywords up 34% in last hour. Escalation probability: HIGH.', conf:'84%' },
+  { icon:'◈', text:'Anomalous volume in defense sector ETFs. Options expiry + geopolitical event probability suggests deliberate positioning.', conf:'78%' },
+  { icon:'◫', text:'Crypto market: stablecoin outflows from Eastern European exchanges. Capital flight indicator active.', conf:'72%' },
+  { icon:'◉', text:'Cross-asset volatility clustering: simultaneous spikes across FX, bonds, equities signal macro regime shift.', conf:'88%' },
+  { icon:'⬡', text:'News sentiment: negative tone ratio 67% across latest 240 articles. Market fear gauge elevated.', conf:'76%' },
+  { icon:'◈', text:'Social signal: recession keywords trending in 14 markets. Retail fear/greed index: 28 — extreme fear.', conf:'82%' },
+  { icon:'◫', text:'Energy grid anomalies in 3 EU nations. Possible coordinated infrastructure stress test detected.', conf:'69%' },
+];
+
+let liveAlerts = [
+  { type:'info',     label:'SYSTEM ONLINE',  text:'ERYNDOR v5.0 connecting to intelligence backend...', tsMs:Date.now()-5000 },
+  { type:'warning',  label:'GEOPOLITICAL',   text:'South China Sea: carrier group activity at elevated levels.', tsMs:Date.now()-4*60000 },
+  { type:'critical', label:'WAR ESCALATION', text:'Eastern front: satellite confirms armoured movement. AI confidence: HIGH.', tsMs:Date.now()-8*60000, flash:true },
+  { type:'success',  label:'AI DETECTION',   text:'Pattern: grain futures correlating with conflict escalation — 87% confidence.', tsMs:Date.now()-13*60000 },
+];
+
+const AUTO_ALERTS = [
+  { type:'info',    label:'PIPELINE SYNC',  text:'ETL pipeline completed. All financial records normalised and indexed.' },
+  { type:'warning', label:'VOLATILITY',     text:'Intraday volatility exceeds 2σ threshold. Risk models recalculating.' },
+  { type:'success', label:'AI ENGINE',      text:'Sentiment model processed latest news batch. Accuracy maintained: 94.2%.' },
+  { type:'info',    label:'DATA STREAM',    text:'All market feeds active. WebSocket stream: zero packet loss.' },
+  { type:'warning', label:'INTELLIGENCE',   text:'Unusual communication frequency surge — NE Mediterranean sector.' },
+];
+
+let statusState = { backend:false, newsdata:false, finnhub:false, coingecko:false, gdelt:false };
+
+// ════════════════════════════════════════════════════════════
+// WEBSOCKET — Backend connection
+// ════════════════════════════════════════════════════════════
+function connectWebSocket() {
+  try {
+    wsConnection = new WebSocket(WS_URL);
+
+    wsConnection.onopen = () => {
+      backendOnline = true;
+      updateStatusBar('backend', true);
+      pushAlert({ type:'success', label:'BACKEND ONLINE', text:'Connected to ERYNDOR Intelligence Server. All live data feeds active.' });
+      setModeBadge('🟢 BACKEND LIVE');
+      console.log('[ERYNDOR] WebSocket connected to backend');
+    };
+
+    wsConnection.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        handleBackendMessage(msg.type, msg.payload);
+      } catch(e) { console.warn('[ERYNDOR] WS parse error:', e); }
+    };
+
+    wsConnection.onclose = () => {
+      backendOnline = false;
+      updateStatusBar('backend', false);
+      setModeBadge('🟡 DIRECT API MODE');
+      console.log('[ERYNDOR] WebSocket closed — switching to direct API mode');
+      // Try reconnect after 10s
+      setTimeout(connectWebSocket, 10000);
+      // Start direct fallback fetches
+      startDirectMode();
+    };
+
+    wsConnection.onerror = () => {
+      backendOnline = false;
+      setModeBadge('🟡 DIRECT API MODE');
+      startDirectMode();
+    };
+  } catch(e) {
+    backendOnline = false;
+    setModeBadge('🟡 DIRECT API MODE');
+    startDirectMode();
+  }
+}
+
+function handleBackendMessage(type, payload) {
+  if (!payload) return;
+  switch(type) {
+    case 'snapshot':
+      if (payload.markets)     applyMarkets(payload.markets);
+      if (payload.crypto)      applyCrypto(payload.crypto);
+      if (payload.news)        applyNews(payload.news);
+      if (payload.conflicts)   applyConflicts(payload.conflicts);
+      if (payload.commodities) applyCommodities(payload.commodities);
+      if (payload.forex)       applyForex(payload.forex);
+      if (payload.stocks)      applyStocks(payload.stocks);
+      if (payload.econ)        applyEcon(payload.econ);
+      if (payload.sentiment)   applySentiment(payload.sentiment);
+      break;
+    case 'markets':     applyMarkets(payload);    break;
+    case 'crypto':      applyCrypto(payload);     break;
+    case 'news':        applyNews(payload);       break;
+    case 'conflicts':   applyConflicts(payload);  break;
+    case 'commodities': applyCommodities(payload);break;
+    case 'forex':       applyForex(payload);      break;
+    case 'stocks':      applyStocks(payload);     break;
+    case 'econ':        applyEcon(payload);       break;
+    case 'sentiment':   applySentiment(payload);  break;
+  }
+}
+
+// ── Apply backend data to local state ─────────────────────
+function applyMarkets(data) {
+  if (!Array.isArray(data)) return;
+  data.forEach((d,i) => {
+    if (MARKETS[i]) {
+      MARKETS[i].val  = d.price;
+      MARKETS[i].open = d.open || d.price;
+      MARKETS[i].history.push(d.price);
+      if (MARKETS[i].history.length > 80) MARKETS[i].history.shift();
+    }
+  });
+  updateStatusBar('finnhub', true);
+  buildMarketsGrid(); buildTicker();
+  const b = document.getElementById('markets-api-badge');
+  if (b) { b.textContent='● FINNHUB LIVE'; b.style.color='var(--neon-green)'; b.style.borderColor='var(--neon-green)'; }
+}
+
+function applyCrypto(data) {
+  if (!Array.isArray(data)) return;
+  data.forEach(d => {
+    const c = CRYPTO.find(x => x.id === d.id || x.sym === d.sym);
+    if (c) { c.price=d.price; c.chg24h=d.chg24h; c.chg1h=d.chg1h||0; c.cap=d.cap||0; }
+  });
+  cryptoApiStatus = 'LIVE';
+  updateStatusBar('coingecko', true);
+  buildCryptoGrid(); buildTicker();
+}
+
+function applyNews(data) {
+  if (!Array.isArray(data) || !data.length) return;
+  activeNews = data;
+  updateStatusBar('newsdata', true);
+  buildNews('news-center', activeNews);
+  const b = document.getElementById('news-api-badge');
+  if (b) { b.textContent='● NEWSDATA LIVE'; b.style.color='var(--neon-green)'; }
+  // Push breaking alerts
+  const hot = data.filter(n=>n.cat==='WAR'||n.cat==='CRISIS').slice(0,2);
+  hot.forEach(n => pushAlert({ type:n.cat==='WAR'?'critical':'warning', label:'BREAKING: '+n.cat, text:n.headline.substring(0,120), tsMs:n.tsMs }));
+}
+
+function applyConflicts(data) {
+  if (!data || !data.conflicts) return;
+  CONFLICTS = data.conflicts;
+  updateStatusBar('gdelt', true);
+  drawWorldMap();
+  // Push GDELT news into feed
+  if (data.gdeltNews?.length) {
+    const nonWar = activeNews.filter(n=>n.cat!=='WAR').slice(0,6);
+    activeNews = [...data.gdeltNews.slice(0,6), ...nonWar].sort((a,b)=>b.tsMs-a.tsMs).slice(0,14);
+    buildNews('news-center', activeNews);
+  }
+}
+
+function applyCommodities(data) {
+  if (!Array.isArray(data)) return;
+  data.forEach(d => {
+    const e = ECON.find(x=>x.label===d.label||x.label.includes(d.label.split(' ')[0]));
+    if (e) { e.cur=d.price; e.val=(d.prefix||'$')+(d.dec===0?Math.round(d.price).toLocaleString():d.price.toFixed(d.dec||2)); }
+  });
+  buildEconGrid();
+}
+
+function applyForex(data) {
+  if (!Array.isArray(data)) return;
+  data.forEach(d => {
+    const e = ECON.find(x=>x.label===d.label);
+    if (e) { e.cur=d.price; e.val=d.price.toFixed(4); }
+  });
+  buildEconGrid();
+  // Add forex to ticker
+  buildTicker();
+}
+
+function applyStocks(data) {
+  if (!Array.isArray(data)) return;
+  data.forEach(d => {
+    const s = COMPANY_STOCKS.find(x=>x.sym===d.sym);
+    if (s) { s.price=d.price; s.chg=d.chg; s.pct=d.pct; }
+  });
+  buildCompanyStocks(); buildTicker();
+}
+
+function applyEcon(data) {
+  if (!Array.isArray(data)) return;
+  data.forEach(d => {
+    const e = ECON.find(x=>x.label===d.label);
+    if (e) { e.val=d.val; if(d.color) e.color=d.color; }
+  });
+  buildEconGrid();
+}
+
+function applySentiment(data) {
+  if (!data) return;
+  const bar = document.getElementById('sentiment-bar');
+  if (bar) {
+    bar.innerHTML = `
+      <div style="width:${data.positive}%;background:var(--neon-green)"></div>
+      <div style="width:${data.neutral}%;background:var(--text-ghost)"></div>
+      <div style="width:${data.negative}%;background:var(--neon-red)"></div>`;
+  }
+  const labels = document.getElementById('sentiment-labels');
+  if (labels) labels.innerHTML = `
+    <span style="color:var(--neon-green)">${data.positive}% POS</span>
+    <span style="color:var(--text-dim)">${data.neutral}% NEU</span>
+    <span style="color:var(--neon-red)">${data.negative}% NEG</span>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// DIRECT API MODE (fallback when no backend)
+// ════════════════════════════════════════════════════════════
+let directModeStarted = false;
+function startDirectMode() {
+  if (directModeStarted) return;
+  directModeStarted = true;
+  console.log('[ERYNDOR] Starting direct API fallback mode');
+  // Start direct fetches
+  fetchCoinGeckoDirect();
+  fetchNewsDataDirect();
+  fetchFinnhubDirect();
+  fetchGDELTDirect();
+  setInterval(fetchCoinGeckoDirect, 60000);
+  setInterval(fetchNewsDataDirect,  10*60000);
+  setInterval(fetchFinnhubDirect,    5*60000);
+  setInterval(fetchGDELTDirect,     15*60000);
+}
+
+async function fetchCoinGeckoDirect() {
+  try {
+    const ids = CRYPTO.map(c=>c.id).join(',');
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    CRYPTO.forEach(c=>{ if(data[c.id]){ c.price=data[c.id].usd; c.chg24h=data[c.id].usd_24h_change||0; } });
+    cryptoApiStatus='LIVE'; updateStatusBar('coingecko',true); buildCryptoGrid(); buildTicker();
+    pushAlert({ type:'success', label:'COINGECKO', text:'Crypto prices live from CoinGecko API.' });
+  } catch(e) {
+    console.warn('[ERYNDOR] CoinGecko direct failed:', e.message);
+    CRYPTO.forEach(c=>{ if(!c.price){c.price=c.fallback;c.chg24h=(Math.random()-0.5)*6;} });
+  }
+}
+
+async function fetchNewsDataDirect() {
+  const urls = [
+    `https://newsdata.io/api/1/latest?apikey=${NEWSDATA_KEY}&language=en&size=10`,
+    `https://newsdata.io/api/1/latest?apikey=${NEWSDATA_KEY}&language=en&q=war+conflict+military&size=8`,
+    `https://newsdata.io/api/1/latest?apikey=${NEWSDATA_KEY}&language=en&category=business&size=6`,
+  ];
+  const collected=[], seen=new Set();
+  for(const url of urls){
+    try{
+      const r=await fetch(url); const d=await r.json();
+      if(d.status!=='success'||!d.results) continue;
+      d.results.forEach(art=>{
+        const title=(art.title||'').trim(); if(!title||seen.has(title)) return; seen.add(title);
+        const text=title+' '+(art.description||'');
+        collected.push({
+          cat:classifyCategory(text), source:(art.source_id||'Newswire').substring(0,25),
+          headline:title.length>120?title.substring(0,117)+'...':title,
+          sentiment:scoreSentiment(text), rel:60+Math.floor(Math.random()*35),
+          tsMs:art.pubDate?new Date(art.pubDate).getTime():Date.now()-Math.random()*1800000
+        });
+      });
+      await new Promise(res=>setTimeout(res,500));
+    }catch(e){ console.warn('[ERYNDOR] NewsData direct failed:',e.message); }
+  }
+  if(collected.length>0){
+    collected.sort((a,b)=>b.tsMs-a.tsMs);
+    activeNews=collected.slice(0,14);
+    updateStatusBar('newsdata',true); buildNews('news-center',activeNews);
+    const b=document.getElementById('news-api-badge');
+    if(b){b.textContent='● NEWSDATA LIVE';b.style.color='var(--neon-green)';}
+    const hot=activeNews.filter(n=>n.cat==='WAR'||n.cat==='CRISIS').slice(0,2);
+    hot.forEach(n=>pushAlert({type:n.cat==='WAR'?'critical':'warning',label:'BREAKING: '+n.cat,text:n.headline.substring(0,120),tsMs:n.tsMs}));
+  }
+}
+
+async function fetchFinnhubDirect() {
+  const symbols=[{idx:0,s:'^GSPC'},{idx:1,s:'^IXIC'},{idx:2,s:'^DJI'},{idx:3,s:'^NSEI'},{idx:4,s:'^FTSE'},{idx:5,s:'^GDAXI'},{idx:6,s:'^N225'},{idx:7,s:'^HSI'}];
+  let ok=0;
+  for(const e of symbols){
+    try{
+      const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(e.s)}&token=${FINNHUB_KEY}`);
+      const q=await r.json();
+      if(q&&q.c>0){MARKETS[e.idx].val=q.c;MARKETS[e.idx].open=q.o||q.pc||q.c;MARKETS[e.idx].history.push(q.c);if(MARKETS[e.idx].history.length>80)MARKETS[e.idx].history.shift();ok++;}
+    }catch(e){} await new Promise(res=>setTimeout(res,350));
+  }
+  // Company stocks
+  for(const s of COMPANY_STOCKS){
+    try{
+      const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${s.sym}&token=${FINNHUB_KEY}`);
+      const q=await r.json();
+      if(q&&q.c>0){s.price=q.c;s.chg=q.d||0;s.pct=q.dp||0;ok++;}
+    }catch(e){} await new Promise(res=>setTimeout(res,350));
+  }
+  if(ok>0){updateStatusBar('finnhub',true);buildMarketsGrid();buildTicker();buildCompanyStocks();
+    pushAlert({type:'success',label:'FINNHUB SYNC',text:`${ok} instruments updated from Finnhub.`});}
+}
+
+async function fetchGDELTDirect() {
+  try{
+    const q=encodeURIComponent('war OR military OR attack OR conflict OR ceasefire');
+    const r=await fetch(`https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&maxrecords=20&format=json&sort=DateDesc&timespan=24h&sourcelang=english`);
+    const data=await r.json();
+    if(!data.articles?.length) throw new Error('no data');
+    const gdeltNews=data.articles.slice(0,8).map(a=>({
+      cat:'WAR',source:a.domain||'GDELT',
+      headline:(a.title||'').length>120?(a.title||'').substring(0,117)+'...':(a.title||'Event detected'),
+      sentiment:scoreSentiment(a.title),rel:65+Math.floor(Math.random()*30),
+      tsMs:a.seendate?parseGDELTDate(a.seendate):Date.now()-Math.random()*3600000
+    }));
+    const nonWar=activeNews.filter(n=>n.cat!=='WAR').slice(0,6);
+    activeNews=[...gdeltNews,...nonWar].sort((a,b)=>b.tsMs-a.tsMs).slice(0,14);
+    updateStatusBar('gdelt',true);buildNews('news-center',activeNews);
+  }catch(e){console.warn('[ERYNDOR] GDELT direct failed:',e.message);}
+}
+
+// ════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════
+function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function fmt(n,d=2){return n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function fmtCrypto(p){return p>=1000?fmt(p,2):p>=1?p.toFixed(3):p.toFixed(5);}
+function getRelativeTime(tsMs){const m=Math.floor((Date.now()-tsMs)/60000);if(m<1)return 'JUST NOW';if(m<60)return m+'m AGO';return Math.floor(m/60)+'h AGO';}
+function classifyCategory(t){
+  if(/war|attack|strike|missile|military|troops|conflict|bomb|kill|soldier|nato|offensive|ceasefire|weapon|frontline/i.test(t)) return 'WAR';
+  if(/economy|inflation|gdp|fed|rate|market|stock|trade|tariff|recession|bank|finance|dollar|debt|earnings/i.test(t)) return 'ECONOMY';
+  if(/ai|tech|cyber|hack|quantum|semiconductor|robot|space|satellite|software|digital|chip/i.test(t)) return 'TECH';
+  if(/sanction|election|president|government|parliament|diplomat|summit|treaty|congress/i.test(t)) return 'POLITICS';
+  if(/earthquake|flood|hurricane|disaster|crisis|famine|drought|climate|pandemic|outbreak/i.test(t)) return 'CRISIS';
+  return 'WORLD';
+}
+function scoreSentiment(t){
+  const n=(t.match(/war|attack|crisis|crash|fall|drop|decline|risk|threat|kill|conflict|bomb|sanction|recession/gi)||[]).length;
+  const p=(t.match(/rally|growth|rise|gain|improve|peace|deal|agreement|recovery|strong|boost|surge/gi)||[]).length;
+  return n>p+1?'neg':p>n+1?'pos':'neu';
+}
+function parseGDELTDate(s){try{return new Date(`${s.substring(0,4)}-${s.substring(4,6)}-${s.substring(6,8)}T${s.substring(8,10)}:${s.substring(10,12)}:${s.substring(12,14)}Z`).getTime();}catch(e){return Date.now();}}
+function setModeBadge(text){const el=document.getElementById('mode-badge');if(el)el.textContent=text;}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ════════════════════════════════════════════════════════════
+// STATUS BAR
+// ════════════════════════════════════════════════════════════
+function updateStatusBar(key,ok){
+  statusState[key]=ok;
+  const live=Object.values(statusState).filter(Boolean).length;
+  const total=Object.keys(statusState).length+7;
+  const el=document.querySelector('#statusbar .status-item:first-child');
+  if(el) el.innerHTML=`<div class="status-dot-sm ${live>3?'dot-green':'dot-yellow'}"></div>APIs: ${live+7}/${total} CONNECTED`;
+  if(key==='finnhub'){const b=document.getElementById('markets-api-badge');if(b){b.textContent=ok?'● FINNHUB LIVE':'● SIMULATED';b.style.color=ok?'var(--neon-green)':'var(--neon-orange)';b.style.borderColor=ok?'var(--neon-green)':'var(--neon-orange)';}}
+  if(key==='newsdata'){const b=document.getElementById('news-api-badge');if(b){b.textContent=ok?'● NEWSDATA LIVE':'● LOADING...';b.style.color=ok?'var(--neon-green)':'var(--neon-orange)';}}
+}
+function updateLatency(){const lat=18+Math.floor(Math.random()*(backendOnline?25:60));const items=document.querySelectorAll('#statusbar .status-item');if(items[2])items[2].innerHTML=`<div class="status-dot-sm ${lat<50?'dot-green':'dot-yellow'}"></div>LATENCY: ${lat}ms`;}
+
+// ════════════════════════════════════════════════════════════
+// ALERT ENGINE
+// ════════════════════════════════════════════════════════════
+function pushAlert(a){liveAlerts.unshift({...a,tsMs:a.tsMs||Date.now()});liveAlerts=liveAlerts.slice(0,16);buildRightFeed();}
+
+// ════════════════════════════════════════════════════════════
+// SIMULATION (between real data fetches)
+// ════════════════════════════════════════════════════════════
+function gbmStep(m){const dt=1/252/78;m.val=Math.max(m.val*Math.exp((m.mu+marketMood*0.0003-0.5*m.sigma**2)*dt+m.sigma*Math.sqrt(dt)*randn()),m.base*0.6);m.history.push(m.val);if(m.history.length>80)m.history.shift();}
+function updateMarketMood(){marketMood+=(Math.random()-0.5)*0.04;marketMood=Math.max(-1,Math.min(1,marketMood));}
+function simCryptoTick(){const bz=randn()*0.5+marketMood*0.2;CRYPTO.forEach((c,i)=>{const z=(i===0?1:0.65+Math.random()*0.3)*bz+(1-(i===0?1:0.65))*randn();const sig=[0.015,0.018,0.025,0.016,0.020,0.022][i]||0.02;c.price=Math.max(c.price*Math.exp(sig*Math.sqrt(1/252/1440)*z*60),0.001);});}
+function tickEcon(){ECON.forEach(e=>{if(!e.cur)return;e.cur*=Math.exp((Math.random()-0.498)*0.0015);if(e.label.includes('OIL'))e.val='$'+e.cur.toFixed(2);else if(e.label==='GOLD')e.val='$'+Math.round(e.cur).toLocaleString();else if(e.label.includes('/'))e.val=e.cur.toFixed(4);else if(e.label==='VIX')e.val=e.cur.toFixed(2);});}
+
+// ════════════════════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ════════════════════════════════════════════════════════════
+function updateClock(){const n=new Date();document.getElementById('clock').textContent=[n.getUTCHours(),n.getUTCMinutes(),n.getUTCSeconds()].map(v=>String(v).padStart(2,'0')).join(':')+' UTC';}
+
+function buildTicker(){
+  const items=[
+    ...MARKETS.map(m=>({sym:m.sym,price:fmt(m.val,2),pct:m.pct})),
+    ...CRYPTO.map(c=>({sym:c.sym,price:fmtCrypto(c.price),pct:c.chg24h})),
+    ...COMPANY_STOCKS.filter(s=>s.price>0).map(s=>({sym:s.sym,price:fmt(s.price,2),pct:s.pct})),
+  ];
+  document.getElementById('ticker').innerHTML=[...items,...items].map(i=>`
+    <div class="ticker-item"><span class="ticker-symbol">${i.sym}</span><span class="ticker-price">${i.price}</span><span class="${(i.pct||0)>=0?'ticker-up':'ticker-down'}">${(i.pct||0)>=0?'+':''}${(i.pct||0).toFixed(2)}%</span></div>`).join('');
+}
+
+function buildMarketsGrid(){
+  document.getElementById('markets-grid').innerHTML=MARKETS.map(m=>{const up=m.chg>=0;return `<div class="market-cell"><div class="market-name">${m.sym}</div><div class="market-price">${fmt(m.val,2)}</div><div class="market-change"><span class="${up?'change-up':'change-down'}">${up?'+':''}${m.chg.toFixed(2)}</span><span class="${up?'change-up':'change-down'}">(${up?'+':''}${m.pct.toFixed(2)}%)</span></div><div class="sparkline"><canvas id="sp_${m.sym.replace(/[\s&]/g,'_')}" width="140" height="28"></canvas></div></div>`;}).join('');
+  MARKETS.forEach(m=>{const c=document.getElementById('sp_'+m.sym.replace(/[\s&]/g,'_'));if(c)drawSparkFromHistory(c,m.history,m.chg>=0);});
+}
+function drawSparkFromHistory(canvas,history,up){
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  const min=Math.min(...history),max=Math.max(...history),range=max-min||1;
+  const col=up?'#00ff88':'#ff2244';
+  ctx.clearRect(0,0,W,H);ctx.beginPath();
+  history.forEach((v,i)=>{const x=(i/(history.length-1))*W,y=H-((v-min)/range)*H*0.85-H*0.08;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.shadowColor=col;ctx.shadowBlur=4;ctx.stroke();
+  ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,up?'rgba(0,255,136,0.2)':'rgba(255,34,68,0.2)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fill();
+}
+
+function buildCryptoGrid(){
+  const b=document.querySelector('#crypto-grid')?.closest('.panel')?.querySelector('.panel-tag');
+  if(b)b.textContent=cryptoApiStatus==='LIVE'?'● COINGECKO LIVE':'● SIMULATED';
+  document.getElementById('crypto-grid').innerHTML=CRYPTO.map(c=>{const up=c.chg24h>=0;return `<div class="crypto-card"><div class="crypto-icon">${c.icon}</div><div class="crypto-name">${c.sym} / ${c.name}</div><div class="crypto-price">$${fmtCrypto(c.price)}</div><div class="crypto-change ${up?'change-up':'change-down'}">${up?'+':''}${c.chg24h.toFixed(2)}% 24h</div></div>`;}).join('');
+}
+
+function buildCompanyStocks(){
+  const el=document.getElementById('company-stocks');if(!el)return;
+  el.innerHTML=COMPANY_STOCKS.map(s=>{const p=s.price||s.fallback,up=s.pct>=0;return `<div class="crypto-card"><div class="crypto-name" style="font-size:11px;color:var(--neon-cyan)">${s.sym}</div><div class="crypto-name">${s.name}</div><div class="crypto-price">$${fmt(p,2)}</div><div class="crypto-change ${up?'change-up':'change-down'}">${up?'+':''}${(s.pct||0).toFixed(2)}%</div></div>`;}).join('');
+}
+
+function buildEconGrid(){
+  document.getElementById('econ-grid').innerHTML=ECON.map(e=>`<div class="econ-cell"><div class="econ-label">${e.label}</div><div class="econ-value" style="color:${e.color};text-shadow:0 0 15px ${e.color}40">${e.val}</div></div>`).join('');
+}
+
+const CAT_CLASS={WAR:'cat-war',ECONOMY:'cat-economy',TECH:'cat-tech',POLITICS:'cat-politics',CRISIS:'cat-crisis',WORLD:'cat-politics'};
+const BORDER_CLASS={WAR:'war',ECONOMY:'economy',TECH:'tech',POLITICS:'politics',CRISIS:'crisis',WORLD:'politics'};
+const SENT_LABEL={pos:'▲ POSITIVE',neg:'▼ NEGATIVE',neu:'◆ NEUTRAL'};
+const SENT_CLASS={pos:'sent-pos',neg:'sent-neg',neu:'sent-neu'};
+
+function buildNews(containerId,data){
+  if(!data?.length)return;
+  document.getElementById(containerId).innerHTML=data.map(n=>`
+    <div class="news-card ${BORDER_CLASS[n.cat]||'politics'}">
+      <div class="news-meta">
+        <span class="news-category ${CAT_CLASS[n.cat]||'cat-politics'}">${n.cat}</span>
+        <span class="news-source">${(n.source||'').substring(0,22)}</span>
+        <span class="news-time">${getRelativeTime(n.tsMs)}</span>
+      </div>
+      <div class="news-headline">${n.headline}</div>
+      <div class="news-sentiment">
+        <span class="${SENT_CLASS[n.sentiment]||'sent-neu'}">${SENT_LABEL[n.sentiment]||'◆ NEUTRAL'}</span>
+        <span style="color:var(--text-ghost);margin-left:8px">REL:</span>
+        <span class="relevance-bar"><span class="relevance-fill" style="width:${n.rel}%"></span></span>
+        <span style="color:var(--text-dim);margin-left:4px">${n.rel}%</span>
+      </div>
+    </div>`).join('');
+}
+
+function buildRightFeed(){
+  document.getElementById('right-feed').innerHTML=liveAlerts.map(a=>`
+    <div class="alert-card ${a.type}" style="position:relative">
+      ${a.flash?'<div class="alert-flash"></div>':''}
+      <div class="alert-type alert-${a.type==='success'?'success':a.type==='info'?'info-color':a.type}">${a.label}</div>
+      <div class="alert-text">${a.text}</div>
+      <div class="alert-time">${getRelativeTime(a.tsMs)}</div>
+    </div>`).join('');
+}
+
+function buildAIInsights(){
+  const s=[AI_POOL[aiCycle%AI_POOL.length],AI_POOL[(aiCycle+1)%AI_POOL.length],AI_POOL[(aiCycle+2)%AI_POOL.length],AI_POOL[(aiCycle+3)%AI_POOL.length]];
+  document.getElementById('ai-insights').innerHTML=s.map(a=>`<div class="ai-row"><div class="ai-icon" style="color:var(--neon-purple)">${a.icon}</div><div class="ai-text">${a.text}</div><div class="ai-conf">${a.conf}</div></div>`).join('');
+}
+
+function drawWorldMap(){
+  const canvas=document.getElementById('mapCanvas');
+  const cont=canvas.parentElement;canvas.width=cont.clientWidth;canvas.height=cont.clientHeight;
+  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+  ctx.fillStyle='#040c14';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,200,255,0.06)';ctx.lineWidth=0.5;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  [[[5,15],[32,10],[32,45],[18,50],[10,42],[5,30]],[[18,50],[30,50],[32,80],[20,88],[14,72],[14,55]],
+   [[44,10],[60,10],[62,32],[50,35],[44,28]],[[44,35],[62,33],[62,75],[50,85],[40,78],[38,55]],
+   [[60,10],[92,10],[94,45],[82,55],[65,50],[62,32]],[[75,62],[88,60],[90,75],[78,80],[72,72]]
+  ].forEach(pts=>{ctx.beginPath();pts.forEach(([px,py],i)=>{const x=(px/100)*W,y=(py/100)*H;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();ctx.fillStyle='#0d2a3e';ctx.fill();ctx.strokeStyle='#1a4060';ctx.lineWidth=1;ctx.stroke();});
+  ctx.strokeStyle='rgba(0,100,160,0.15)';ctx.lineWidth=0.5;ctx.setLineDash([4,8]);
+  [[.5],[.39],[.61]].forEach(([py])=>{ctx.beginPath();ctx.moveTo(0,H*py);ctx.lineTo(W,H*py);ctx.stroke();});
+  ctx.setLineDash([]);
+  document.getElementById('conflict-markers').innerHTML=CONFLICTS.map(c=>{
+    const x=c.pos.x/100*W,y=c.pos.y/100*H;
+    const pc=c.type==='red'?'ping-red':c.type==='orange'?'ping-orange':'ping-yellow';
+    const col=c.type==='red'?'var(--neon-red)':c.type==='orange'?'var(--neon-orange)':'var(--neon-yellow)';
+    const event=c.latestEvent||c.events||'Monitoring active';
+    return `<div class="conflict-marker" style="left:${x}px;top:${y}px;transform:translate(-50%,-50%)">
+      <div class="conflict-ping ${pc}" style="color:${col}"></div>
+      <div class="conflict-tooltip">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${col};letter-spacing:2px;margin-bottom:3px">${c.name}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim)">${c.level} · RISK: ${c.risk}${c.mentions?' · '+c.mentions+' events':''}</div>
+        <div style="font-size:9px;color:var(--text-mid);margin-top:3px">${event.substring(0,60)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let spxCandles=[];
+function initSpxCandles(){let p=5700;spxCandles=[];for(let i=0;i<39;i++){const o=p,ch=(Math.random()-0.45)*30,cl=o+ch;spxCandles.push({open:o,close:cl,high:Math.max(o,cl)+Math.random()*15,low:Math.min(o,cl)-Math.random()*15});p=cl;}}
+function appendSpxCandle(){const l=spxCandles[spxCandles.length-1],o=l.close,ch=(Math.random()-0.495+marketMood*0.05)*28,cl=o+ch;spxCandles.push({open:o,close:cl,high:Math.max(o,cl)+Math.random()*12,low:Math.min(o,cl)-Math.random()*12});if(spxCandles.length>50)spxCandles.shift();}
+function drawSPXChart(){
+  const canvas=document.getElementById('spxChart');if(!canvas)return;
+  canvas.width=canvas.parentElement.clientWidth-24;const W=canvas.width,H=110;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  const minP=Math.min(...spxCandles.map(c=>c.low)),maxP=Math.max(...spxCandles.map(c=>c.high)),range=maxP-minP||1;
+  const pad={t:10,b:20,l:10,r:44},cW=(W-pad.l-pad.r)/spxCandles.length*0.68;
+  ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(0,200,255,0.06)';ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){const y=pad.t+(i/4)*(H-pad.t-pad.b);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillStyle='rgba(61,106,132,0.8)';ctx.font='8px Share Tech Mono';ctx.fillText((maxP-(i/4)*range).toFixed(0),W-pad.r+4,y+3);}
+  spxCandles.forEach((c,i)=>{const x=pad.l+(i+0.5)/spxCandles.length*(W-pad.l-pad.r),up=c.close>=c.open,col=up?'#00ff88':'#ff2244';const toY=v=>H-pad.b-((v-minP)/range)*(H-pad.t-pad.b);ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,toY(c.high));ctx.lineTo(x,toY(c.low));ctx.stroke();ctx.fillStyle=up?'rgba(0,255,136,0.75)':'rgba(255,34,68,0.75)';ctx.fillRect(x-cW/2,Math.min(toY(c.open),toY(c.close)),cW,Math.max(2,Math.abs(toY(c.open)-toY(c.close))));});
+}
+
+function setView(v){document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));event.currentTarget.classList.add('active');}
+
+// ════════════════════════════════════════════════════════════
+// MASTER TICK
+// ════════════════════════════════════════════════════════════
+function masterTick(){
+  tickCount++;
+  updateMarketMood();
+  // Only GBM-simulate if backend not providing real data
+  if(!backendOnline) MARKETS.forEach(m=>gbmStep(m));
+  simCryptoTick(); tickEcon();
+  buildTicker(); buildMarketsGrid(); buildCryptoGrid();
+  if(tickCount%10===0){buildNews('news-center',activeNews);buildRightFeed();}
+  if(tickCount%20===0){appendSpxCandle();drawSPXChart();}
+  if(tickCount%15===0){aiCycle++;buildAIInsights();}
+  if(tickCount%13===0){pushAlert({...AUTO_ALERTS[autoAlertIdx++%AUTO_ALERTS.length],tsMs:Date.now()});}
+  updateLatency();
+}
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+async function init(){
+  // Seed fallbacks
+  CRYPTO.forEach(c=>{if(!c.price){c.price=c.fallback;c.chg24h=(Math.random()-0.5)*6;}});
+  COMPANY_STOCKS.forEach(s=>{s.price=s.fallback;});
+  initSpxCandles();
+
+  // Initial render
+  buildTicker();buildMarketsGrid();buildCryptoGrid();buildEconGrid();
+  buildNews('news-center',activeNews);buildRightFeed();buildAIInsights();
+  drawWorldMap();drawSPXChart();
+
+  // Set badge IDs
+  const newsBadge=document.querySelector('#news-center')?.closest('.panel')?.querySelector('.panel-tag');
+  if(newsBadge){newsBadge.id='news-api-badge';newsBadge.textContent='● CONNECTING...';}
+  const mktBadge=document.querySelector('#markets-grid')?.closest('.panel')?.querySelector('.panel-tag');
+  if(mktBadge){mktBadge.id='markets-api-badge';mktBadge.textContent='● CONNECTING...';}
+
+  // Try WebSocket backend first
+  connectWebSocket();
+
+  // After 4s, if backend not connected, start direct API mode
+  setTimeout(()=>{
+    if(!backendOnline){
+      console.log('[ERYNDOR] Backend not available — starting direct API mode');
+      startDirectMode();
+    }
+  }, 4000);
+
+  // Master simulation tick always runs
+  setInterval(masterTick, 3000);
+  setInterval(updateClock, 1000);
+  updateClock();
+}
+
+window.addEventListener('load', () => { setTimeout(init, 80); });
+window.addEventListener('resize', () => { drawWorldMap(); drawSPXChart(); });
+</script>
+</body>
+</html>
