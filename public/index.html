@@ -1799,7 +1799,7 @@ function drawWorldMap(){
   }).join('');
 }
 
-let spxCandles=[];
+spxCandles=[];
 function initSpxCandles(){let p=5700;spxCandles=[];for(let i=0;i<39;i++){const o=p,ch=(Math.random()-0.45)*30,cl=o+ch;spxCandles.push({open:o,close:cl,high:Math.max(o,cl)+Math.random()*15,low:Math.min(o,cl)-Math.random()*15});p=cl;}}
 function appendSpxCandle(){const l=spxCandles[spxCandles.length-1],o=l.close,ch=(Math.random()-0.495+marketMood*0.05)*28,cl=o+ch;spxCandles.push({open:o,close:cl,high:Math.max(o,cl)+Math.random()*12,low:Math.min(o,cl)-Math.random()*12});if(spxCandles.length>50)spxCandles.shift();}
 function drawSPXChart(){
