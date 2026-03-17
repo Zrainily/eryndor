@@ -1841,6 +1841,12 @@ function initLeafletMap() {
     maxZoom: 19,
   }).addTo(leafletMap);
 
+  // Pass scroll events through map to center panel
+  document.getElementById('leaflet-map').addEventListener('wheel', function(e) {
+    const center = document.getElementById('center');
+    if (center) center.scrollTop += e.deltaY;
+  }, { passive: true });
+
   // Equator and tropics lines
   [[0,'rgba(0,200,255,0.15)'],[23.5,'rgba(0,200,255,0.07)'],[-23.5,'rgba(0,200,255,0.07)']].forEach(([lat,color])=>{
     L.polyline([[[lat,-180],[lat,180]]], { color, weight: 0.8, dashArray: '6 8' }).addTo(leafletMap);
