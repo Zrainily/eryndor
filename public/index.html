@@ -1834,6 +1834,8 @@ function initLeafletMap() {
     scrollWheelZoom: false,
     dragging: true,
   });
+  // Force size recalculation after tiles load
+  setTimeout(() => { leafletMap.invalidateSize(); }, 400);
 
   // Dark tile layer
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -1974,7 +1976,8 @@ async function init(){
   // Initial render
   buildTicker();buildMarketsGrid();buildCryptoGrid();buildEconGrid();
   buildNews('news-center',activeNews);buildRightFeed();buildAIInsights();
-  drawWorldMap();drawSPXChart();
+  drawSPXChart();
+  setTimeout(() => { drawWorldMap(); }, 300);
 
   // Set badge IDs
   const newsBadge=document.querySelector('#news-center')?.closest('.panel')?.querySelector('.panel-tag');
