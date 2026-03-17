@@ -6,6 +6,8 @@
 <title>ERYNDOR — Global Intelligence Command Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --bg-void: #020408;
@@ -457,12 +459,45 @@
     height: 28px;
   }
 
-  /* ---- WORLD MAP PLACEHOLDER ---- */
+  /* ---- WORLD MAP LEAFLET ---- */
   .map-container {
-    height: 320px;
-    background: var(--bg-card);
+    height: 380px;
+    background: #040c14;
     position: relative;
     overflow: hidden;
+  }
+  .leaflet-container { background: #040c14 !important; }
+  .leaflet-tile { filter: brightness(0.5) saturate(0.3) hue-rotate(180deg); }
+  .leaflet-control-zoom a { background: #0d1f2d !important; color: #00c8ff !important; border-color: #1a4060 !important; }
+  .leaflet-control-attribution { background: rgba(4,12,20,0.8) !important; color: #3d6684 !important; font-size: 8px !important; }
+  .leaflet-control-attribution a { color: #3d6684 !important; }
+  .conflict-pulse {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+  }
+  .conflict-pulse::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    animation: ripple 2s ease-out infinite;
+    opacity: 0.6;
+  }
+  .conflict-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    animation: ripple 2s ease-out infinite 0.5s;
+    opacity: 0.3;
+  }
+  @keyframes ripple {
+    0% { transform: scale(0.5); opacity: 0.8; }
+    100% { transform: scale(3); opacity: 0; }
   }
 
   .map-svg-container {
@@ -977,6 +1012,10 @@
     line-height: 1;
   }
 
+  .leaflet-popup-content-wrapper { background: #040c14 !important; border: 1px solid #1a4060 !important; border-radius: 4px !important; box-shadow: 0 0 20px rgba(0,200,255,0.2) !important; }
+  .leaflet-popup-tip { background: #040c14 !important; }
+  .leaflet-popup-close-button { color: #00c8ff !important; }
+  @keyframes conflictPing { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
 </style>
 </head>
 <body>
@@ -1081,9 +1120,7 @@
         </div>
       </div>
       <div class="map-container">
-        <div class="map-overlay-grid"></div>
-        <canvas id="mapCanvas" style="width:100%;height:100%;position:absolute;top:0;left:0;"></canvas>
-        <!-- Conflict markers positioned over canvas -->
+        <div id="leaflet-map" style="width:100%;height:100%;position:absolute;top:0;left:0;z-index:1;"></div>
         <div id="conflict-markers"></div>
         <div style="position:absolute;bottom:10px;left:12px;display:flex;gap:12px;z-index:5">
           <div style="display:flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim)">
@@ -1230,8 +1267,8 @@
 // Falls back to direct API calls if no backend detected
 // ============================================================
 
-const BACKEND_URL = 'https://eryndor.onrender.com';
-const WS_URL      = 'wss://eryndor.onrender.com';
+const BACKEND_URL = 'http://localhost:3001';
+const WS_URL      = 'ws://localhost:3001';
 
 // ── API Keys (fallback direct mode only) ──────────────────
 const NEWSDATA_KEY = 'pub_194ef19773c8449580735adf9282ab70';
@@ -1768,35 +1805,103 @@ function buildAIInsights(){
   document.getElementById('ai-insights').innerHTML=s.map(a=>`<div class="ai-row"><div class="ai-icon" style="color:var(--neon-purple)">${a.icon}</div><div class="ai-text">${a.text}</div><div class="ai-conf">${a.conf}</div></div>`).join('');
 }
 
-function drawWorldMap(){
-  const canvas=document.getElementById('mapCanvas');
-  const cont=canvas.parentElement;canvas.width=cont.clientWidth;canvas.height=cont.clientHeight;
-  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
-  ctx.fillStyle='#040c14';ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='rgba(0,200,255,0.06)';ctx.lineWidth=0.5;
-  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-  [[[5,15],[32,10],[32,45],[18,50],[10,42],[5,30]],[[18,50],[30,50],[32,80],[20,88],[14,72],[14,55]],
-   [[44,10],[60,10],[62,32],[50,35],[44,28]],[[44,35],[62,33],[62,75],[50,85],[40,78],[38,55]],
-   [[60,10],[92,10],[94,45],[82,55],[65,50],[62,32]],[[75,62],[88,60],[90,75],[78,80],[72,72]]
-  ].forEach(pts=>{ctx.beginPath();pts.forEach(([px,py],i)=>{const x=(px/100)*W,y=(py/100)*H;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.closePath();ctx.fillStyle='#0d2a3e';ctx.fill();ctx.strokeStyle='#1a4060';ctx.lineWidth=1;ctx.stroke();});
-  ctx.strokeStyle='rgba(0,100,160,0.15)';ctx.lineWidth=0.5;ctx.setLineDash([4,8]);
-  [[.5],[.39],[.61]].forEach(([py])=>{ctx.beginPath();ctx.moveTo(0,H*py);ctx.lineTo(W,H*py);ctx.stroke();});
-  ctx.setLineDash([]);
-  document.getElementById('conflict-markers').innerHTML=CONFLICTS.map(c=>{
-    const x=c.pos.x/100*W,y=c.pos.y/100*H;
-    const pc=c.type==='red'?'ping-red':c.type==='orange'?'ping-orange':'ping-yellow';
-    const col=c.type==='red'?'var(--neon-red)':c.type==='orange'?'var(--neon-orange)':'var(--neon-yellow)';
-    const event=c.latestEvent||c.events||'Monitoring active';
-    return `<div class="conflict-marker" style="left:${x}px;top:${y}px;transform:translate(-50%,-50%)">
-      <div class="conflict-ping ${pc}" style="color:${col}"></div>
-      <div class="conflict-tooltip">
-        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${col};letter-spacing:2px;margin-bottom:3px">${c.name}</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim)">${c.level} · RISK: ${c.risk}${c.mentions?' · '+c.mentions+' events':''}</div>
-        <div style="font-size:9px;color:var(--text-mid);margin-top:3px">${event.substring(0,60)}</div>
-      </div>
-    </div>`;
-  }).join('');
+// ── LEAFLET MAP ───────────────────────────────────────────
+let leafletMap = null;
+let leafletMarkers = [];
+
+// Conflict zone lat/lng coordinates
+const CONFLICT_LATLNG = {
+  'Russia-Ukraine': [49.0, 32.0],
+  'Gaza / Israel':  [31.5, 34.5],
+  'Red Sea':        [15.0, 42.0],
+  'Myanmar':        [19.0, 96.0],
+  'Sudan':          [15.5, 32.5],
+  'Taiwan Strait':  [24.0, 120.5],
+  'S. China Sea':   [12.0, 114.0],
+};
+
+function initLeafletMap() {
+  if (leafletMap) return;
+  leafletMap = L.map('leaflet-map', {
+    center: [25, 20],
+    zoom: 2,
+    minZoom: 2,
+    maxZoom: 6,
+    zoomControl: true,
+    attributionControl: true,
+    worldCopyJump: false,
+  });
+
+  // Dark tile layer
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(leafletMap);
+
+  // Equator and tropics lines
+  [[0,'rgba(0,200,255,0.15)'],[23.5,'rgba(0,200,255,0.07)'],[-23.5,'rgba(0,200,255,0.07)']].forEach(([lat,color])=>{
+    L.polyline([[[lat,-180],[lat,180]]], { color, weight: 0.8, dashArray: '6 8' }).addTo(leafletMap);
+  });
+
+  renderLeafletMarkers();
+}
+
+function renderLeafletMarkers() {
+  if (!leafletMap) return;
+  // Remove old markers
+  leafletMarkers.forEach(m => leafletMap.removeLayer(m));
+  leafletMarkers = [];
+
+  CONFLICTS.forEach(c => {
+    const latlng = CONFLICT_LATLNG[c.name];
+    if (!latlng) return;
+    const col = c.type==='red' ? '#ff2244' : c.type==='orange' ? '#ff8800' : '#ffdd00';
+    const size = c.type==='red' ? 16 : c.type==='orange' ? 13 : 11;
+    const event = c.latestEvent || c.events || 'Monitoring active';
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:${size}px;height:${size}px;
+        background:${col};
+        border-radius:50%;
+        box-shadow:0 0 10px ${col}, 0 0 20px ${col}55;
+        border:2px solid rgba(255,255,255,0.3);
+        animation:conflictPing 2s ease-in-out infinite;
+        position:relative;
+      ">
+        <div style="
+          position:absolute;inset:-6px;border-radius:50%;
+          border:1.5px solid ${col};
+          animation:ripple 2s ease-out infinite;
+          opacity:0.6;
+        "></div>
+      </div>`,
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2],
+    });
+
+    const marker = L.marker(latlng, { icon })
+      .addTo(leafletMap)
+      .bindPopup(`
+        <div style="font-family:'Share Tech Mono',monospace;background:#040c14;color:${col};padding:4px;min-width:180px;">
+          <div style="font-size:11px;letter-spacing:2px;margin-bottom:4px;">${c.name}</div>
+          <div style="font-size:9px;color:#7aa8c4;">${c.level} · RISK: ${c.risk}${c.mentions?' · '+c.mentions+' events':''}</div>
+          <div style="font-size:9px;color:#a0b8c8;margin-top:4px;">${event.substring(0,80)}</div>
+        </div>
+      `, { className: 'eryndor-popup' });
+
+    leafletMarkers.push(marker);
+  });
+}
+
+function drawWorldMap() {
+  if (!leafletMap) {
+    initLeafletMap();
+  } else {
+    renderLeafletMarkers();
+  }
 }
 
 spxCandles=[];
