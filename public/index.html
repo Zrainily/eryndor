@@ -1121,6 +1121,7 @@
       </div>
       <div class="map-container">
         <div id="leaflet-map" style="width:100%;height:100%;position:absolute;top:0;left:0;z-index:1;"></div>
+        <div id="map-scroll-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:999;pointer-events:none;"></div>
         <div id="conflict-markers"></div>
         <div style="position:absolute;bottom:10px;left:12px;display:flex;gap:12px;z-index:5">
           <div style="display:flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim)">
@@ -1840,6 +1841,22 @@ function initLeafletMap() {
     subdomains: 'abcd',
     maxZoom: 19,
   }).addTo(leafletMap);
+
+  // Scroll overlay — lets wheel events reach center panel, lets clicks through to map
+  const overlay = document.getElementById('map-scroll-overlay');
+  const center = document.getElementById('center');
+  overlay.style.pointerEvents = 'auto';
+  overlay.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    if (center) center.scrollTop += e.deltaY;
+  }, { passive: false });
+  overlay.addEventListener('click', function(e) {
+    // Pass clicks through to map
+    overlay.style.pointerEvents = 'none';
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (el) el.click();
+    setTimeout(() => { overlay.style.pointerEvents = 'auto'; }, 100);
+  });
 
   // Pass scroll events through map to center panel
   document.getElementById('leaflet-map').addEventListener('wheel', function(e) {
